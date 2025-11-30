@@ -42,15 +42,24 @@
                     
                     <ul class="nav flex-column">
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ route('giangvien.dashboard') }}">
+                            <a class="nav-link {{ request()->routeIs('giangvien.dashboard') ? 'active' : '' }}" 
+                               href="{{ route('giangvien.dashboard') }}">
                                 <i class="fas fa-tachometer-alt me-2"></i>
                                 Dashboard
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link active" href="{{ route('giangvien.lophoc.index') }}">
+                            <a class="nav-link {{ request()->routeIs('giangvien.lophoc.*') ? 'active' : '' }}" 
+                               href="{{ route('giangvien.lophoc.index') }}">
                                 <i class="fas fa-users me-2"></i>
                                 Quản lý Lớp học
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('giangvien.baigiang') ? 'active' : '' }}" 
+                               href="{{ route('giangvien.baigiang') }}">
+                                <i class="fas fa-book-open me-2"></i>
+                                Bài giảng của tôi
                             </a>
                         </li>
                         <li class="nav-item">
@@ -63,6 +72,12 @@
                             <a class="nav-link" href="#">
                                 <i class="fas fa-file-alt me-2"></i>
                                 Điểm danh
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#">
+                                <i class="fas fa-clipboard-check me-2"></i>
+                                Bài kiểm tra
                             </a>
                         </li>
                         <li class="nav-item mt-3">

@@ -4,13 +4,23 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\GiangVienController;
+use App\Http\Controllers\SinhVienController;
 use App\Http\Controllers\Admin\AdminGVController;
 use App\Http\Controllers\Admin\AdminSinhVienController;
 use App\Http\Controllers\Admin\DashboardController;
-use App\Http\Controllers\Admin\AdminMonHocController; // THÊM DÒNG NÀY
+use App\Http\Controllers\Admin\AdminMonHocController;
 
 Route::get('/', function () {
     return view('auth.login');
+});
+
+// DEBUG ROUTE - Thêm route debug để kiểm tra sinh viên
+Route::get('/debug-sinhvien', function() {
+    $sinhViens = \App\Models\SinhVien::all();
+    return response()->json([
+        'total' => $sinhViens->count(),
+        'data' => $sinhViens
+    ]);
 });
 
 // Các route authentication
@@ -50,26 +60,51 @@ Route::get('/fix-gv-duplicate', function () {
 Route::middleware('auth')->group(function () {
 
     // Sinh viên routes
-    Route::view('/sinhvien', 'sinhvien.sinhvien')->name('sinhvien.dashboard');
+    Route::prefix('sinhvien')->name('sinhvien.')->group(function () {
+    Route::get('/', [SinhVienController::class, 'dashboard'])->name('dashboard');
+    Route::get('/khoahoc', [SinhVienController::class, 'khoaHoc'])->name('khoahoc');
+    Route::get('/lophoc/{ma_lop}/baigiang', [SinhVienController::class, 'baiGiang'])->name('lophoc.baigiang');
+    Route::get('/lophoc/{ma_lop}/baigiang/{id}', [SinhVienController::class, 'chiTietBaiGiang'])->name('lophoc.baigiang.chitiet');
+});
 
-            // Giảng viên routes (cho giảng viên)
-        Route::get('/giangvien', [GiangVienController::class, 'dashboard'])->name('giangvien.dashboard');
-        Route::get('/giangvien/baigiang', [GiangVienController::class, 'baigiang'])->name('giangvien.baigiang');
-        Route::get('/giangvien/baikiemtra', [GiangVienController::class, 'baikiemtra'])->name('giangvien.baikiemtra');
-        Route::get('/giangvien/nganhang', [GiangVienController::class, 'nganhang'])->name('giangvien.nganhang');
-        Route::get('/giangvien/ketqua', [GiangVienController::class, 'ketqua'])->name('giangvien.ketqua');
-        Route::get('/giangvien/sinhvien', [GiangVienController::class, 'sinhvien'])->name('giangvien.sinhvien');
+    // Giảng viên routes (cho giảng viên)
+    Route::get('/giangvien', [GiangVienController::class, 'dashboard'])->name('giangvien.dashboard');
+    Route::get('/giangvien/baigiang', [GiangVienController::class, 'baigiang'])->name('giangvien.baigiang');
+    Route::get('/giangvien/baikiemtra', [GiangVienController::class, 'baikiemtra'])->name('giangvien.baikiemtra');
+    Route::get('/giangvien/nganhang', [GiangVienController::class, 'nganhang'])->name('giangvien.nganhang');
+    Route::get('/giangvien/ketqua', [GiangVienController::class, 'ketqua'])->name('giangvien.ketqua');
+    Route::get('/giangvien/sinhvien', [GiangVienController::class, 'sinhvien'])->name('giangvien.sinhvien');
 
-        // THÊM CÁC ROUTES QUẢN LÝ LỚP HỌC CHO GIẢNG VIÊN
-        Route::prefix('giangvien/lophoc')->name('giangvien.lophoc.')->group(function () {
-            Route::get('/', [\App\Http\Controllers\GiangVien\LopHocController::class, 'index'])->name('index');
-            Route::get('/create', [\App\Http\Controllers\GiangVien\LopHocController::class, 'create'])->name('create');
-            Route::post('/store', [\App\Http\Controllers\GiangVien\LopHocController::class, 'store'])->name('store');
-            Route::get('/{ma_lop}', [\App\Http\Controllers\GiangVien\LopHocController::class, 'show'])->name('show');
-            Route::get('/{ma_lop}/edit', [\App\Http\Controllers\GiangVien\LopHocController::class, 'edit'])->name('edit');
-            Route::put('/{ma_lop}', [\App\Http\Controllers\GiangVien\LopHocController::class, 'update'])->name('update');
-            Route::delete('/{ma_lop}', [\App\Http\Controllers\GiangVien\LopHocController::class, 'destroy'])->name('destroy');
+    // Routes quản lý lớp học cho giảng viên
+    Route::prefix('giangvien/lophoc')->name('giangvien.lophoc.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\GiangVien\LopHocController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\GiangVien\LopHocController::class, 'create'])->name('create');
+        Route::post('/store', [\App\Http\Controllers\GiangVien\LopHocController::class, 'store'])->name('store');
+        Route::get('/{ma_lop}', [\App\Http\Controllers\GiangVien\LopHocController::class, 'show'])->name('show');
+        Route::get('/{ma_lop}/edit', [\App\Http\Controllers\GiangVien\LopHocController::class, 'edit'])->name('edit');
+        Route::put('/{ma_lop}', [\App\Http\Controllers\GiangVien\LopHocController::class, 'update'])->name('update');
+        Route::delete('/{ma_lop}', [\App\Http\Controllers\GiangVien\LopHocController::class, 'destroy'])->name('destroy');
+
+        // Quản lý sinh viên trong lớp học
+        // Trong file web.php, phần quản lý sinh viên - SỬA THÀNH GET
+        Route::prefix('{ma_lop}/sinhvien')->name('sinhvien.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\GiangVien\LopHocSinhVienController::class, 'index'])->name('index');
+            Route::get('/them', [\App\Http\Controllers\GiangVien\LopHocSinhVienController::class, 'create'])->name('create');
+            Route::post('/them', [\App\Http\Controllers\GiangVien\LopHocSinhVienController::class, 'store'])->name('store');
+            Route::delete('/{ma_sinhvien}', [\App\Http\Controllers\GiangVien\LopHocSinhVienController::class, 'destroy'])->name('destroy');
+            Route::get('/tim-kiem', [\App\Http\Controllers\GiangVien\LopHocSinhVienController::class, 'timKiemSinhVien'])->name('timkiem'); // SỬA: GET thay vì POST
         });
+    });
+
+    // Routes quản lý bài giảng - TÁCH RIÊNG RA NGOÀI
+    Route::prefix('giangvien/lophoc/{ma_lop}/baigiang')->name('giangvien.lophoc.baigiang.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\GiangVien\BaiGiangController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\GiangVien\BaiGiangController::class, 'create'])->name('create');
+        Route::post('/store', [\App\Http\Controllers\GiangVien\BaiGiangController::class, 'store'])->name('store');
+        Route::get('/{id}/edit', [\App\Http\Controllers\GiangVien\BaiGiangController::class, 'edit'])->name('edit');
+        Route::put('/{id}/update', [\App\Http\Controllers\GiangVien\BaiGiangController::class, 'update'])->name('update');
+        Route::delete('/{id}/destroy', [\App\Http\Controllers\GiangVien\BaiGiangController::class, 'destroy'])->name('destroy');
+    });
 
     Route::prefix('admin')->name('admin.')->group(function () {
         // Dashboard

@@ -83,34 +83,22 @@
 
             <!-- Các chức năng chính -->
             <div class="row">
-                <!-- Quản lý Bài giảng -->
-                <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card border-0 shadow-sm">
-                        <div class="card-body text-center">
-                            <div class="icon-circle bg-primary text-white mb-3">
-                                <i class="fas fa-book-open fa-2x"></i>
-                            </div>
-                            <h5 class="card-title">Quản lý Bài giảng</h5>
-                            <p class="card-text text-muted small">Tạo và quản lý bài giảng, tài liệu học tập</p>
-                            <div class="dropdown">
-                                <button class="btn btn-outline-primary dropdown-toggle" type="button" 
-                                        data-bs-toggle="dropdown" aria-expanded="false">
-                                    Lựa chọn
-                                </button>
-                                <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" href="{{ route('giangvien.baigiang') }}">
-                                        <i class="fas fa-list me-2"></i>Danh sách bài giảng
-                                    </a></li>
-                                    <li><a class="dropdown-item" href="#">
-                                        <i class="fas fa-plus me-2"></i>Tạo bài giảng mới
-                                    </a></li>
-                                    <li><a class="dropdown-item" href="#">
-                                        <i class="fas fa-upload me-2"></i>Upload tài liệu
-                                    </a></li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
+                <div class="dropdown">
+                    <button class="btn btn-outline-primary dropdown-toggle" type="button" 
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                        Lựa chọn
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="{{ route('giangvien.baigiang') }}">
+                            <i class="fas fa-list me-2"></i>Danh sách bài giảng
+                        </a></li>
+                        <li><a class="dropdown-item" href="#">
+                            <i class="fas fa-plus me-2"></i>Tạo bài giảng mới
+                        </a></li>
+                        <li><a class="dropdown-item" href="#">
+                            <i class="fas fa-upload me-2"></i>Upload tài liệu
+                        </a></li>
+                    </ul>
                 </div>
 
                 <!-- Quản lý Bài kiểm tra -->

@@ -40,6 +40,7 @@
                                     <th>Thời gian</th>
                                     <th>Trạng thái</th>
                                     <th>Thao tác</th>
+                                    <th>Bài Giảng</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -76,6 +77,37 @@
                                             </a>
                                             <form action="{{ route('giangvien.lophoc.destroy', $lop->ma_lop) }}" 
                                                   method="POST" class="d-inline">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-danger" 
+                                                        title="Xóa"
+                                                        onclick="return confirm('Bạn có chắc chắn muốn xóa lớp học này?')"
+                                                        {{ $lop->so_luong_sv_hien_tai > 0 ? 'disabled' : '' }}>
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ route('giangvien.lophoc.baigiang.index', $lop->ma_lop) }}" 
+                                            class="btn btn-success" title="Quản lý Bài giảng">
+                                                <i class="fas fa-book-open"></i>
+                                            </a>
+                                            <a href="{{ route('giangvien.lophoc.sinhvien.index', $lop->ma_lop) }}" 
+                                            class="btn btn-info" title="Quản lý Sinh viên">
+                                                <i class="fas fa-user-graduate"></i>
+                                            </a>
+                                            <a href="{{ route('giangvien.lophoc.show', $lop->ma_lop) }}" 
+                                            class="btn btn-info" title="Xem chi tiết">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{{ route('giangvien.lophoc.edit', $lop->ma_lop) }}" 
+                                            class="btn btn-warning" title="Chỉnh sửa">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <form action="{{ route('giangvien.lophoc.destroy', $lop->ma_lop) }}" 
+                                                method="POST" class="d-inline">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="btn btn-danger" 

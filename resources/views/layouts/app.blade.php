@@ -50,16 +50,15 @@
                             </a>
                             <ul class="dropdown-menu">
                                 <li><a class="dropdown-item" href="#"><i class="fas fa-user-circle me-2"></i>Thông tin cá nhân</a></li>
-                                <li><a class="dropdown-item" href="#"><i class="fas fa-book me-2"></i>Khóa học của tôi</a></li>
+                                @if(Auth::user()->isSinhVien())
+                                <li><a class="dropdown-item" href="{{ route('sinhvien.khoahoc') }}"><i class="fas fa-book me-2"></i>Khóa học của tôi</a></li>
+                                @endif
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
                                     <a class="dropdown-item" href="{{ route('logout') }}"
-                                       onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                                    onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
                                         <i class="fas fa-sign-out-alt me-2"></i>Đăng xuất
                                     </a>
-                                    <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display:none;">
-                                        @csrf
-                                    </form>
                                 </li>
                             </ul>
                         </li>
