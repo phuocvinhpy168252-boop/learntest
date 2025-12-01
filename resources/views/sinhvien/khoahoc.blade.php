@@ -45,11 +45,20 @@
                                         </p>
                                     </div>
                                     <div class="card-footer bg-transparent">
-                                        <div class="d-grid gap-2">
-                                            <a href="{{ route('sinhvien.lophoc.baigiang', $lop->ma_lop) }}" 
-                                               class="btn btn-primary btn-sm">
-                                                <i class="fas fa-play-circle me-1"></i>Vào học
-                                            </a>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div class="d-grid" style="width:60%">
+                                                <a href="{{ route('sinhvien.lophoc.baigiang', $lop->ma_lop) }}" 
+                                                   class="btn btn-primary btn-sm">
+                                                    <i class="fas fa-play-circle me-1"></i>Vào học
+                                                </a>
+                                            </div>
+                                            <div class="text-end" style="width:40%">
+                                                <?php $soBaiKiem = \App\Models\BaiKiemTra::where('ma_lop', $lop->ma_lop)->where('trang_thai', '!=', 'da_huy')->count(); ?>
+                                                <a href="{{ route('sinhvien.lophoc.baikiemtra', $lop->ma_lop) }}" class="btn btn-outline-secondary btn-sm">
+                                                    <i class="fas fa-clipboard-list me-1"></i>Bài kiểm tra
+                                                    <span class="badge bg-primary ms-2">{{ $soBaiKiem }}</span>
+                                                </a>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

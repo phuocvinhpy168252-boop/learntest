@@ -98,10 +98,6 @@
                                             class="btn btn-info" title="Quản lý Sinh viên">
                                                 <i class="fas fa-user-graduate"></i>
                                             </a>
-                                            <a href="{{ route('giangvien.lophoc.show', $lop->ma_lop) }}" 
-                                            class="btn btn-info" title="Xem chi tiết">
-                                                <i class="fas fa-eye"></i>
-                                            </a>
                                             <a href="{{ route('giangvien.lophoc.edit', $lop->ma_lop) }}" 
                                             class="btn btn-warning" title="Chỉnh sửa">
                                                 <i class="fas fa-edit"></i>

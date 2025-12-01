@@ -138,6 +138,10 @@ class AuthController extends Controller
 
         return redirect()->route('login.form');
     }
+    public function logoutGet(Request $request)
+    {
+        return $this->logout($request);
+    }
 
     /**
      * Hàm tạo tài khoản admin mới

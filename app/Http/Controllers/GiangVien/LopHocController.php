@@ -125,18 +125,34 @@ class LopHocController extends Controller
     /**
      * Hiển thị chi tiết lớp học
      */
-    public function show($ma_lop)
-    {
-        $user = Auth::user();
-        $giangVien = GiangVien::where('email', $user->email)->first();
-        
-        $lopHoc = LopHoc::where('ma_lop', $ma_lop)
-                        ->where('ma_giang_vien', $giangVien->ma_giangvien)
-                        ->with(['monHoc', 'giangVien'])
-                        ->firstOrFail();
+    /**
+ * Hiển thị chi tiết lớp học
+ */
+public function show($ma_lop)
+{
+    $user = Auth::user();
+    $giangVien = GiangVien::where('email', $user->email)->first();
+    
+    $lopHoc = LopHoc::where('ma_lop', $ma_lop)
+                    ->where('ma_giang_vien', $giangVien->ma_giangvien)
+                    ->with(['monHoc', 'giangVien'])
+                    ->firstOrFail();
 
-        return view('giangvien.lophoc.show', compact('lopHoc'));
-    }
+    // Lấy thống kê bài giảng
+    $tongBaiGiang = \App\Models\BaiGiang::where('ma_lop', $ma_lop)->count();
+    
+    // Lấy bài giảng mới nhất
+    $baiGiangMoiNhat = \App\Models\BaiGiang::where('ma_lop', $ma_lop)
+                          ->orderBy('created_at', 'desc')
+                          ->limit(3)
+                          ->get();
+
+    return view('giangvien.lophoc.show', compact(
+        'lopHoc', 
+        'tongBaiGiang', 
+        'baiGiangMoiNhat'
+    ));
+}
 
     /**
      * Hiển thị form chỉnh sửa lớp học
