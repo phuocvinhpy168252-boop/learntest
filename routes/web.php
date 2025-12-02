@@ -65,10 +65,10 @@ Route::middleware('auth')->group(function () {
 
      // Sinh viên routes
     Route::prefix('sinhvien')->name('sinhvien.')->group(function () {
-        Route::get('/', [SinhVienController::class, 'dashboard'])->name('dashboard');
-        Route::get('/khoahoc', [SinhVienController::class, 'khoaHoc'])->name('khoahoc');
+        Route::get('/', [SinhVienController::class, 'khoaHoc'])->name('khoahoc');
         Route::get('/lophoc/{ma_lop}/baigiang', [SinhVienController::class, 'baiGiang'])->name('lophoc.baigiang');
         Route::get('/lophoc/{ma_lop}/baigiang/{id}', [SinhVienController::class, 'chiTietBaiGiang'])->name('lophoc.baigiang.chitiet');
+        Route::get('/lophoc/{ma_lop}/baigiang/{id}/download', [SinhVienController::class, 'downloadBaiGiang'])->name('lophoc.baigiang.download');
         
         // Thêm route mới cho bài kiểm tra
         Route::get('/lophoc/{ma_lop}/baikiemtra', [SinhVienController::class, 'danhSachBaiKiemTra'])->name('lophoc.baikiemtra');

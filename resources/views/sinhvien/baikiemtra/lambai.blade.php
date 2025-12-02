@@ -3,7 +3,7 @@
 @section('title', 'Làm bài kiểm tra: ' . $baiKiemTra->tieu_de)
 
 @section('content')
-<div class="container-fluid py-4">
+<div class="container-fluid py-4 navbar-fixed-spacing">
     <div class="row">
         <div class="col-12">
             <!-- Timer và thông tin -->
@@ -254,59 +254,101 @@
     </div>
 </div>
 
+<!-- Style inline để không cần thêm file CSS -->
 <style>
-.question-container {
-    background-color: #f8f9fa;
-    border-left: 4px solid #007bff !important;
-}
+    .navbar-fixed-spacing {
+        padding-top: 80px !important;
+    }
+    
+    @media (max-width: 768px) {
+        .navbar-fixed-spacing {
+            padding-top: 70px !important;
+        }
+    }
+    
+    .question-container {
+        background-color: #f8f9fa;
+        border-left: 4px solid #007bff !important;
+    }
 
-.form-check-input:checked + label > div {
-    background-color: #e7f3ff !important;
-    border-color: #007bff !important;
-    border-width: 2px !important;
-}
+    .form-check-input:checked + label > div {
+        background-color: #e7f3ff !important;
+        border-color: #007bff !important;
+        border-width: 2px !important;
+    }
 
-.form-check-label {
-    cursor: pointer;
-    user-select: none;
-}
+    .form-check-label {
+        cursor: pointer;
+        user-select: none;
+    }
 
-.answer-container .form-check-label > div {
-    transition: all 0.2s ease;
-}
+    .answer-container .form-check-label > div {
+        transition: all 0.2s ease;
+    }
 
-.answer-container .form-check-label:hover > div {
-    background-color: #f0f0f0 !important;
-    border-color: #007bff !important;
-}
+    .answer-container .form-check-label:hover > div {
+        background-color: #f0f0f0 !important;
+        border-color: #007bff !important;
+    }
 
-#exam-timer {
-    font-family: 'Courier New', monospace;
-    background: #212529;
-    padding: 10px 20px;
-    border-radius: 5px;
-    display: inline-block;
-}
+    #exam-timer {
+        font-family: 'Courier New', monospace;
+        background: #212529;
+        padding: 10px 20px;
+        border-radius: 5px;
+        display: inline-block;
+        color: white;
+    }
 
-.time-warning {
-    animation: blink 1s infinite;
-}
+    .time-warning {
+        animation: blink 1s infinite;
+        color: #dc3545 !important;
+    }
 
-@keyframes blink {
-    0% { color: #dc3545; }
-    50% { color: #ffc107; }
-    100% { color: #dc3545; }
-}
+    @keyframes blink {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
 
-.question-nav-btn.active {
-    background-color: #007bff;
-    color: white;
-}
+    .question-nav-btn.active {
+        background-color: #007bff !important;
+        color: white !important;
+        border-color: #007bff !important;
+    }
 
-.question-nav-btn.flagged {
-    background-color: #ffc107;
-    color: black;
-}
+    .question-nav-btn.flagged {
+        background-color: #ffc107 !important;
+        color: black !important;
+        border-color: #ffc107 !important;
+    }
+    
+    /* Scrollbar cho câu hỏi */
+    .question-container {
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+    
+    /* Responsive cho mobile */
+    @media (max-width: 768px) {
+        #exam-timer {
+            font-size: 1.5rem;
+            padding: 8px 16px;
+        }
+        
+        .question-container {
+            padding: 1rem !important;
+        }
+        
+        .btn {
+            padding: 0.5rem 1rem !important;
+            font-size: 0.9rem;
+        }
+        
+        .flag-question-btn, .prev-question-btn, .next-question-btn {
+            margin-bottom: 0.5rem;
+        }
+    }
 </style>
 
 <script>
@@ -410,19 +452,153 @@ document.addEventListener('DOMContentLoaded', function() {
     // Nộp bài
     function submitExam() {
         // Hiển thị thời gian cuối cùng
-        document.getElementById('final-time').textContent = Math.floor(timeSpent / 60);
+        const finalTimeElement = document.getElementById('final-time');
+        if (finalTimeElement) {
+            finalTimeElement.textContent = Math.floor(timeSpent / 60);
+        }
         
         // Hiển thị modal xác nhận
         const modal = new bootstrap.Modal(document.getElementById('submitModal'));
         modal.show();
+    }
+    
+    // Sửa hàm confirmSubmit trong phần script
+    function confirmSubmit() {
+        clearInterval(timerInterval);
         
-        // Xử lý khi đóng modal mà không nộp bài
-        document.getElementById('submitModal').addEventListener('hidden.bs.modal', function() {
-            // Timer tiếp tục chạy nếu người dùng hủy
-            if (!timerInterval || !document.getElementById('thoi_gian_lam').value) {
-                // Timer đã dừng, không cần khôi phục
+        // Đóng modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('submitModal'));
+        if (modal) {
+            modal.hide();
+        }
+        
+        // Hiển thị loading
+        const confirmBtn = document.getElementById('confirm-submit');
+        const originalText = confirmBtn ? confirmBtn.innerHTML : '';
+        if (confirmBtn) {
+            confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang nộp...';
+            confirmBtn.disabled = true;
+        }
+        
+        // Tạo form data và thêm tất cả các câu trả lời
+        const formData = new FormData();
+        const form = document.getElementById('exam-form');
+        
+        // Thêm CSRF token
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        if (csrfToken) {
+            formData.append('_token', csrfToken);
+        }
+        
+        // Thêm thời gian làm bài
+        const thoiGianLam = document.getElementById('thoi_gian_lam');
+        if (thoiGianLam) {
+            formData.append('thoi_gian_lam', thoiGianLam.value);
+        }
+        
+        // Thêm tất cả câu trả lời
+        const formElements = form.elements;
+        for (let i = 0; i < formElements.length; i++) {
+            const element = formElements[i];
+            if (element.name && element.name.includes('cau_tra_loi')) {
+                if (element.type === 'radio') {
+                    if (element.checked) {
+                        formData.append(element.name, element.value);
+                    }
+                } else if (element.type === 'textarea' || element.type === 'text') {
+                    formData.append(element.name, element.value || '');
+                }
             }
-        }, { once: true });
+        }
+        
+        // Gửi yêu cầu nộp bài bằng AJAX
+        const url = form.getAttribute('action');
+        
+        fetch(url, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => {
+            console.log('Response status:', response.status, response.statusText);
+            return response.json().then(data => {
+                return {
+                    status: response.status,
+                    ok: response.ok,
+                    data: data
+                };
+            });
+        })
+        .then(result => {
+            console.log('Response data:', result.data);
+            
+            if (result.ok && result.data.success) {
+                // Nộp thành công
+                if (result.data.message) {
+                    // Hiển thị thông báo thành công
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
+                    alertDiv.style.zIndex = '9999';
+                    alertDiv.innerHTML = `
+                        <i class="fas fa-check-circle me-2"></i>
+                        ${result.data.message}
+                    `;
+                    document.body.appendChild(alertDiv);
+                    
+                    // Tự động ẩn sau 2 giây
+                    setTimeout(() => {
+                        alertDiv.remove();
+                    }, 2000);
+                }
+                
+                // Chuyển hướng sau 1 giây
+                setTimeout(() => {
+                    if (result.data.redirect) {
+                        window.location.href = result.data.redirect;
+                    } else {
+                        // Fallback
+                        const fallbackUrl = form.getAttribute('action').replace('/nop-bai', '');
+                        window.location.href = fallbackUrl;
+                    }
+                }, 1000);
+                
+            } else {
+                // Có lỗi
+                const errorMsg = result.data.message || `Lỗi ${result.status}: ${result.data.message || 'Có lỗi xảy ra khi nộp bài!'}`;
+                alert(errorMsg);
+                
+                // Khôi phục nút
+                if (confirmBtn) {
+                    confirmBtn.innerHTML = originalText;
+                    confirmBtn.disabled = false;
+                }
+                
+                // Khôi phục timer (nhưng chỉ nếu vẫn còn thời gian)
+                const remainingTime = examTime - timeSpent;
+                if (remainingTime > 0) {
+                    initTimer();
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Có lỗi xảy ra khi nộp bài: ' + error.message);
+            
+            // Khôi phục nút
+            if (confirmBtn) {
+                confirmBtn.innerHTML = originalText;
+                confirmBtn.disabled = false;
+            }
+            
+            // Khôi phục timer (nhưng chỉ nếu vẫn còn thời gian)
+            const remainingTime = examTime - timeSpent;
+            if (remainingTime > 0) {
+                initTimer();
+            }
+        });
     }
     
     // Xử lý sự kiện
@@ -452,11 +628,9 @@ document.addEventListener('DOMContentLoaded', function() {
             submitExam();
         }
         
-        // Xác nhận nộp bài
+        // Xác nhận nộp bài - CHỈ GỌI HÀM confirmSubmit()
         if (e.target.id === 'confirm-submit') {
-            clearInterval(timerInterval);
-            trackAnswers();
-            document.getElementById('exam-form').submit();
+            confirmSubmit();
         }
     });
     

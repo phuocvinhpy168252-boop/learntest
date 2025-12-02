@@ -275,79 +275,160 @@ class SinhVienController extends Controller
     }
 
     /**
-     * Nộp bài kiểm tra
-     */
-    public function nopBai(Request $request, $ma_lop, $ma_bai_kiem_tra)
-    {
-        $user = Auth::user();
-        
-        // Kiểm tra sinh viên có trong lớp không
-        $daDangKy = DangKyLop::where('ma_sinhvien', $user->ma_nguoi_dung)
-            ->where('ma_lop', $ma_lop)
-            ->where('trang_thai', 'dang_hoc')
-            ->exists();
+ * Nộp bài kiểm tra
+ */
+public function nopBai(Request $request, $ma_lop, $ma_bai_kiem_tra)
+{
+    $user = Auth::user();
+    
+    // Kiểm tra sinh viên có trong lớp không
+    $daDangKy = DangKyLop::where('ma_sinhvien', $user->ma_nguoi_dung)
+        ->where('ma_lop', $ma_lop)
+        ->where('trang_thai', 'dang_hoc')
+        ->exists();
 
-        if (!$daDangKy) {
-            return response()->json(['success' => false, 'message' => 'Bạn chưa đăng ký lớp học này!']);
-        }
+    if (!$daDangKy) {
+        return response()->json([
+            'success' => false, 
+            'message' => 'Bạn chưa đăng ký lớp học này!'
+        ], 403);
+    }
 
-        $baiKiemTra = BaiKiemTra::where('ma_lop', $ma_lop)
-            ->where('ma_bai_kiem_tra', $ma_bai_kiem_tra)
-            ->firstOrFail();
+    $baiKiemTra = BaiKiemTra::where('ma_lop', $ma_lop)
+        ->where('ma_bai_kiem_tra', $ma_bai_kiem_tra)
+        ->first();
 
-        // Kiểm tra đã làm bài chưa
-        $daLam = KetQuaBaiKiemTra::where('ma_sinhvien', $user->ma_nguoi_dung)
-            ->where('ma_bai_kiem_tra', $ma_bai_kiem_tra)
-            ->exists();
+    if (!$baiKiemTra) {
+        return response()->json([
+            'success' => false, 
+            'message' => 'Bài kiểm tra không tồn tại!'
+        ], 404);
+    }
 
-        if ($daLam) {
-            return response()->json(['success' => false, 'message' => 'Bạn đã làm bài kiểm tra này rồi!']);
-        }
+    // Kiểm tra đã làm bài chưa
+    $daLam = KetQuaBaiKiemTra::where('ma_sinhvien', $user->ma_nguoi_dung)
+        ->where('ma_bai_kiem_tra', $ma_bai_kiem_tra)
+        ->exists();
 
+    if ($daLam) {
+        return response()->json([
+            'success' => false, 
+            'message' => 'Bạn đã làm bài kiểm tra này rồi!'
+        ], 400);
+    }
+
+    // Kiểm tra thời gian làm bài
+    $now = now();
+    if ($now < $baiKiemTra->thoi_gian_bat_dau) {
+        return response()->json([
+            'success' => false, 
+            'message' => 'Bài kiểm tra chưa bắt đầu!'
+        ], 400);
+    }
+
+    if ($now > $baiKiemTra->thoi_gian_ket_thuc) {
+        return response()->json([
+            'success' => false, 
+            'message' => 'Bài kiểm tra đã hết thời gian làm bài!'
+        ], 400);
+    }
+
+    try {
         // Lấy câu trả lời từ request
         $cauTraLois = $request->input('cau_tra_loi', []);
+        
+        // Kiểm tra nếu không có câu trả lời nào
+        if (empty($cauTraLois)) {
+            $cauTraLois = [];
+        }
         
         // Lấy tất cả câu hỏi của bài kiểm tra
         $cauHois = CauHoi::where('ma_bai_kiem_tra', $ma_bai_kiem_tra)
             ->where('trang_thai', 'active')
             ->get();
 
+        if ($cauHois->isEmpty()) {
+            return response()->json([
+                'success' => false, 
+                'message' => 'Bài kiểm tra không có câu hỏi!'
+            ], 400);
+        }
+
         $tongDiem = 0;
         $chiTietCauTraLoi = [];
+        $coTuLuanChuaCham = false;
 
         foreach ($cauHois as $cauHoi) {
             $diemCauHoi = 0;
             $traLoi = $cauTraLois[$cauHoi->id] ?? null;
             
             // Tính điểm theo loại câu hỏi
-            if ($cauHoi->loai_cau_hoi === 'trac_nghiem') {
+            if ($cauHoi->isTracNghiem()) {
                 $dapAnDung = $cauHoi->getDapAnDung();
-                if ($traLoi == $dapAnDung) {
-                    $diemCauHoi = $cauHoi->diem;
+                if ($traLoi !== null && $traLoi !== '') {
+                    $traLoiValue = (string)$traLoi;
+                    $dapAnDungValue = $dapAnDung !== null ? (string)$dapAnDung : null;
+                    
+                    if ($traLoiValue === $dapAnDungValue) {
+                        $diemCauHoi = floatval($cauHoi->diem);
+                    }
                 }
-            } elseif ($cauHoi->loai_cau_hoi === 'dung_sai') {
+            } elseif ($cauHoi->isDungSai()) {
                 $dapAnDung = $cauHoi->dap_an;
-                if ($traLoi == $dapAnDung) {
-                    $diemCauHoi = $cauHoi->diem;
+                if ($traLoi !== null && $traLoi !== '') {
+                    $traLoiValue = (string)$traLoi;
+                    $dapAnDungValue = $dapAnDung !== null ? (string)$dapAnDung : null;
+                    
+                    if ($traLoiValue === $dapAnDungValue) {
+                        $diemCauHoi = floatval($cauHoi->diem);
+                    }
                 }
-            } elseif ($cauHoi->loai_cau_hoi === 'tu_luan') {
-                // Tự luận mặc định cho 0 điểm, cần giáo viên chấm
+            } elseif ($cauHoi->isTuLuan()) {
+                // Tự luận mặc định cho 0 điểm, cần giáo viên chấm sau
                 $diemCauHoi = 0;
+                $coTuLuanChuaCham = true;
+                // Lưu câu trả lời tự luận
+                $traLoi = trim($traLoi ?? '');
             }
             
             $tongDiem += $diemCauHoi;
             
+            // Chuẩn bị chi tiết câu trả lời
             $chiTietCauTraLoi[] = [
+                'cau_hoi_id' => $cauHoi->id,
                 'ma_cau_hoi' => $cauHoi->ma_cau_hoi,
                 'noi_dung' => $cauHoi->noi_dung,
                 'loai_cau_hoi' => $cauHoi->loai_cau_hoi,
                 'tra_loi' => $traLoi,
-                'dap_an_dung' => $cauHoi->loai_cau_hoi === 'trac_nghiem' ? $cauHoi->getDapAnDung() : $cauHoi->dap_an,
+                'dap_an_dung' => $cauHoi->isTracNghiem() ? $cauHoi->getDapAnDung() : ($cauHoi->isDungSai() ? $cauHoi->dap_an : null),
                 'diem' => $diemCauHoi,
-                'diem_toi_da' => $cauHoi->diem
+                'diem_toi_da' => floatval($cauHoi->diem),
+                'da_tra_loi' => $traLoi !== null && $traLoi !== ''
             ];
         }
 
+        // Lấy thời gian làm bài từ form (tính bằng phút)
+        $thoiGianLamPhut = intval($request->input('thoi_gian_lam', 0));
+        
+        // Nếu thời gian làm = 0, tính thời gian thực tế từ khi vào làm bài
+        if ($thoiGianLamPhut <= 0) {
+            $thoiGianLamPhut = 1;
+        }
+        
+        // Chuyển đổi thời gian làm sang giây (cho trường thoi_gian_lam_bai trong DB)
+        $thoiGianLamGiay = $thoiGianLamPhut * 60;
+        
+        // Tính thời gian bắt đầu (bây giờ trừ đi thời gian đã làm)
+        $thoiGianBatDau = now()->subMinutes($thoiGianLamPhut);
+
+        // Xác định trạng thái dựa trên loại câu hỏi
+        // Trạng thái chỉ có thể là: 'dang_lam', 'da_hoan_thanh', 'da_cham_diem'
+        $trangThai = 'da_hoan_thanh'; // Mặc định
+        
+        // Nếu có câu hỏi tự luận chưa chấm, vẫn để là 'da_hoan_thanh'
+        // (Giảng viên sẽ chuyển sang 'da_cham_diem' sau khi chấm)
+        // Không có trạng thái 'cho_cham_diem' trong database
+        
         // Lưu kết quả
         $ketQua = new KetQuaBaiKiemTra();
         $ketQua->ma_ket_qua = 'KQ' . time() . rand(100, 999);
@@ -355,21 +436,33 @@ class SinhVienController extends Controller
         $ketQua->ma_bai_kiem_tra = $ma_bai_kiem_tra;
         $ketQua->ma_lop = $ma_lop;
         $ketQua->diem = $tongDiem;
-        $ketQua->thoi_gian_bat_dau = now();
+        $ketQua->thoi_gian_bat_dau = $thoiGianBatDau;
         $ketQua->thoi_gian_nop = now();
-        $ketQua->thoi_gian_lam_bai = $request->input('thoi_gian_lam', 0);
-        $ketQua->chi_tiet_cau_tra_loi = json_encode($chiTietCauTraLoi);
-        $ketQua->trang_thai = 'da_hoan_thanh';
+        $ketQua->thoi_gian_lam_bai = $thoiGianLamGiay;
+        $ketQua->chi_tiet_cau_tra_loi = json_encode($chiTietCauTraLoi, JSON_UNESCAPED_UNICODE);
+        $ketQua->trang_thai = $trangThai;
         $ketQua->save();
 
         return response()->json([
             'success' => true,
-            'message' => 'Nộp bài thành công!',
+            'message' => 'Nộp bài thành công!' . ($coTuLuanChuaCham ? ' Bài tự luận sẽ được giảng viên chấm điểm sau.' : ''),
             'diem' => $tongDiem,
-            'redirect' => route('sinhvien.lophoc.baikiemtra.ketqua', [$ma_lop, $ma_bai_kiem_tra])
+            'redirect' => route('sinhvien.lophoc.baikiemtra.chitiet', [$ma_lop, $ma_bai_kiem_tra])
         ]);
-    }
 
+    } catch (\Exception $e) {
+        \Log::error('Lỗi khi nộp bài: ' . $e->getMessage(), [
+            'user' => $user->ma_nguoi_dung,
+            'bai_kiem_tra' => $ma_bai_kiem_tra,
+            'trace' => $e->getTraceAsString()
+        ]);
+        
+        return response()->json([
+            'success' => false,
+            'message' => 'Có lỗi xảy ra khi nộp bài. Vui lòng thử lại! Error: ' . $e->getMessage()
+        ], 500);
+    }
+}
     /**
      * Xem kết quả bài kiểm tra
      */
@@ -395,4 +488,5 @@ class SinhVienController extends Controller
             'chiTiet'
         ));
     }
+    
 }
