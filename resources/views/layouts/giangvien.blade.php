@@ -56,8 +56,8 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('giangvien.baigiang') ? 'active' : '' }}" 
-                               href="{{ route('giangvien.baigiang') }}">
+                            <a class="nav-link {{ request()->routeIs('giangvien.baigiangcuatoi.*') || request()->routeIs('giangvien.baigiang') ? 'active' : '' }}" 
+                            href="{{ route('giangvien.baigiangcuatoi.index') }}">
                                 <i class="fas fa-book-open me-2"></i>
                                 Bài giảng của tôi
                             </a>
@@ -75,7 +75,8 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#">
+                            <a class="nav-link {{ request()->routeIs('giangvien.baikiemtra.quanly') || request()->routeIs('giangvien.lophoc.baikiemtra.*') || request()->routeIs('giangvien.lophoc.*.baikiemtra.*') ? 'active' : '' }}" 
+                               href="{{ route('giangvien.baikiemtra.quanly') }}">
                                 <i class="fas fa-clipboard-check me-2"></i>
                                 Bài kiểm tra
                             </a>

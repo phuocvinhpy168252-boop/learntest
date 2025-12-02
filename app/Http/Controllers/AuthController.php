@@ -43,20 +43,19 @@ class AuthController extends Controller
             Auth::login($user);
             $request->session()->regenerate();
 
-            // Chuyển hướng theo loại tài khoản
+            // Trong phương thức login() của AuthController.php
             switch ($user->loai_taikhoan) {
                 case 'sinhvien':
-                    return redirect()->route('sinhvien.dashboard');
-                case 'admin':
-                    return redirect('/admin');
                 case 'giangvien':
-                    return redirect()->route('giangvien.dashboard');
+                case 'admin':
+                    // Tất cả đều về trang chủ
+                    return redirect()->route('home');
                 default:
                     Auth::logout();
                     return redirect()->route('login.form')->withErrors([
                         'email' => 'Loại tài khoản không hợp lệ.',
                     ]);
-            }
+            }   
         }
 
         return back()->withErrors([
@@ -137,6 +136,10 @@ class AuthController extends Controller
         $request->session()->regenerateToken();
 
         return redirect()->route('login.form');
+    }
+    public function logoutGet(Request $request)
+    {
+        return $this->logout($request);
     }
 
     /**
